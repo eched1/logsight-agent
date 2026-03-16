@@ -1,0 +1,16 @@
+[Unit]
+Description=LogSight Agent — log shipper
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/python3 /opt/logsight/logsight-agent.py --config /etc/logsight/agent.yaml
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

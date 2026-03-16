@@ -1,0 +1,25 @@
+# LogSight Agent Configuration
+# Copy to /etc/logsight/agent.yaml and fill in your credentials
+
+endpoint: https://logsight-api.home.arpa
+username: your-username
+password: your-password
+source_id: your-source-id-from-logsight
+
+# Optional
+batch_size: 50
+flush_interval: 5
+verify_ssl: true
+
+# Files to watch (format: syslog_bsd, syslog_5424, json, plain, auto)
+watch:
+  - path: /var/log/syslog
+    format: syslog_bsd
+  - path: /var/log/auth.log
+    format: syslog_bsd
+  - path: /var/log/nginx/access.log
+    format: plain
+  - path: /var/log/nginx/error.log
+    format: plain
+  - path: /var/log/app/*.log
+    format: json
