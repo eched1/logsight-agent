@@ -2,29 +2,29 @@
 
 ## Context
 Files SCP'd to ~/logsight-customer-integration/ on mgmt-01.
-LogSight backend: logsight-api.home.arpa
+LogSight backend: logsight-api.example.internal
 This tests the agent + integration flow as if we're a customer.
 
 ## Steps
 
 ### 1. Create a test customer account
 ```bash
-curl -sk -X POST https://logsight-api.home.arpa/api/v1/auth/register \
+curl -sk -X POST https://logsight-api.example.internal/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "test-customer@dk-infraedge.com", "username": "test-customer", "password": "***REMOVED-CREDENTIAL***"}'
+  -d '{"email": "test-customer@dk-infraedge.com", "username": "test-customer", "password": "$LOGSIGHT_TEST_PASSWORD"}'
 ```
 
 ### 2. Login and create sources
 ```bash
-TOKEN=$(curl -sk -X POST https://logsight-api.home.arpa/api/v1/auth/login \
+TOKEN=$(curl -sk -X POST https://logsight-api.example.internal/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "test-customer", "password": "***REMOVED-CREDENTIAL***"}' | jq -r '.access_token')
+  -d '{"username": "test-customer", "password": "$LOGSIGHT_TEST_PASSWORD"}' | jq -r '.access_token')
 
 # Create source for mgmt-01
-SOURCE_MGMT=$(curl -sk -X POST https://logsight-api.home.arpa/api/v1/sources/ \
+SOURCE_MGMT=$(curl -sk -X POST https://logsight-api.example.internal/api/v1/sources/ \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name": "mgmt-01", "source_type": "syslog", "host": "192.168.1.222"}' | jq -r '.id')
+  -d '{"name": "mgmt-01", "source_type": "syslog", "host": "10.0.0.10"}' | jq -r '.id')
 
 echo "mgmt-01 source: $SOURCE_MGMT"
 ```
@@ -36,9 +36,9 @@ sudo cp ~/logsight-customer-integration/logsight-agent.py /opt/logsight/
 
 # Write config with actual credentials
 sudo tee /etc/logsight/agent.yaml <<EOF
-endpoint: https://logsight-api.home.arpa
+endpoint: https://logsight-api.example.internal
 username: test-customer
-password: ***REMOVED-CREDENTIAL***
+password: "$LOGSIGHT_TEST_PASSWORD"
 source_id: $SOURCE_MGMT
 verify_ssl: false
 
@@ -58,7 +58,7 @@ AGENT_PID=$!
 sleep 15
 
 # Verify logs are flowing
-curl -sk -X GET "https://logsight-api.home.arpa/api/v1/logs/?source_id=$SOURCE_MGMT&limit=5" \
+curl -sk -X GET "https://logsight-api.example.internal/api/v1/logs/?source_id=$SOURCE_MGMT&limit=5" \
   -H "Authorization: Bearer $TOKEN" | jq '.[] | {timestamp, level, host, message}' | head -20
 
 kill $AGENT_PID
@@ -77,7 +77,7 @@ sudo journalctl -u logsight-agent --no-pager -n 20
 ### 5. Verify in LogSight UI
 ```bash
 # Check log count
-curl -sk "https://logsight-api.home.arpa/api/v1/logs/?source_id=$SOURCE_MGMT&limit=1" \
+curl -sk "https://logsight-api.example.internal/api/v1/logs/?source_id=$SOURCE_MGMT&limit=1" \
   -H "Authorization: Bearer $TOKEN" | jq 'length'
 ```
 
@@ -86,19 +86,19 @@ curl -sk "https://logsight-api.home.arpa/api/v1/logs/?source_id=$SOURCE_MGMT&lim
 scp /opt/logsight/logsight-agent.py k3s-wk-01:/tmp/
 
 # Create source for k3s-wk-01
-SOURCE_WK01=$(curl -sk -X POST https://logsight-api.home.arpa/api/v1/sources/ \
+SOURCE_WK01=$(curl -sk -X POST https://logsight-api.example.internal/api/v1/sources/ \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name": "k3s-wk-01", "source_type": "syslog", "host": "192.168.1.221"}' | jq -r '.id')
+  -d '{"name": "k3s-wk-01", "source_type": "syslog", "host": "10.0.0.10"}' | jq -r '.id')
 
 ssh k3s-wk-01 "python3 /tmp/logsight-agent.py \
-  --endpoint https://logsight-api.home.arpa \
-  --username test-customer --password ***REMOVED-CREDENTIAL*** \
+  --endpoint https://logsight-api.example.internal \
+  --username test-customer --password "$LOGSIGHT_TEST_PASSWORD" \
   --source-id $SOURCE_WK01 \
   --watch /var/log/syslog:syslog_bsd \
   --no-verify-ssl -v &"
 sleep 15
-curl -sk "https://logsight-api.home.arpa/api/v1/logs/?source_id=$SOURCE_WK01&limit=3" \
+curl -sk "https://logsight-api.example.internal/api/v1/logs/?source_id=$SOURCE_WK01&limit=3" \
   -H "Authorization: Bearer $TOKEN" | jq '.[] | {host, level, message}'
 ```
 
@@ -117,3 +117,6 @@ gh repo create eched1/logsight-agent --public --source . --push
 - Logs appear in LogSight UI under the test-customer sources
 - systemd service survives restart
 - GitHub repo created at github.com/eched1/logsight-agent
+
+> Note: set `LOGSIGHT_TEST_PASSWORD` in your shell before running the commands
+> above. Do not commit a real password to this file.

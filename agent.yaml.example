@@ -1,7 +1,7 @@
 # LogSight Agent Configuration
 # Copy to /etc/logsight/agent.yaml and fill in your credentials
 
-endpoint: https://logsight-api.home.arpa
+endpoint: https://logsight-api.example.internal
 username: your-username
 password: your-password
 source_id: your-source-id-from-logsight

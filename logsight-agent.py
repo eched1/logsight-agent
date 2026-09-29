@@ -6,7 +6,7 @@ Single file, no external dependencies beyond Python 3.8+ stdlib.
 
 Usage:
     python3 logsight-agent.py --config /etc/logsight/agent.yaml
-    python3 logsight-agent.py --endpoint https://logsight-api.home.arpa \
+    python3 logsight-agent.py --endpoint https://logsight-api.example.internal \
         --username ops --password secret --source-id abc123 \
         --watch /var/log/syslog:syslog_bsd --watch /var/log/app.log:json
 """
@@ -34,7 +34,7 @@ LOG = logging.getLogger("logsight-agent")
 
 DEFAULT_BATCH_SIZE = 50
 DEFAULT_FLUSH_INTERVAL = 5  # seconds
-DEFAULT_ENDPOINT = "https://logsight-api.home.arpa"
+DEFAULT_ENDPOINT = "https://logsight-api.example.internal"
 
 # ---------------------------------------------------------------------------
 # Parsers — extract structured fields from raw log lines

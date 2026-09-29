@@ -6,12 +6,12 @@
 
 ```bash
 # Register (or your LogSight admin creates an account for you)
-curl -X POST https://logsight-api.home.arpa/api/v1/auth/register \
+curl -X POST https://logsight-api.example.internal/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email": "ops@customer.com", "username": "customer-ops", "password": "CHANGE_ME"}'
 
 # Login to get your token
-TOKEN=$(curl -s -X POST https://logsight-api.home.arpa/api/v1/auth/login \
+TOKEN=$(curl -s -X POST https://logsight-api.example.internal/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "customer-ops", "password": "CHANGE_ME"}' | jq -r '.access_token')
 ```
@@ -19,7 +19,7 @@ TOKEN=$(curl -s -X POST https://logsight-api.home.arpa/api/v1/auth/login \
 ### Step 2: Create a log source
 
 ```bash
-SOURCE_ID=$(curl -s -X POST https://logsight-api.home.arpa/api/v1/sources/ \
+SOURCE_ID=$(curl -s -X POST https://logsight-api.example.internal/api/v1/sources/ \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -48,11 +48,11 @@ The lightest option — a single Python script that tails log files and ships th
 
 ```bash
 # Download the agent
-curl -O https://logsight-api.home.arpa/downloads/logsight-agent.py
+curl -O https://logsight-api.example.internal/downloads/logsight-agent.py
 
 # Configure
 cat > /etc/logsight/agent.yaml <<EOF
-endpoint: https://logsight-api.home.arpa
+endpoint: https://logsight-api.example.internal
 username: customer-ops
 password: CHANGE_ME
 source_id: YOUR_SOURCE_ID
@@ -103,7 +103,7 @@ Add this output to your existing Fluent Bit config:
 [OUTPUT]
     Name        http
     Match       *
-    Host        logsight-api.home.arpa
+    Host        logsight-api.example.internal
     Port        443
     URI         /api/v1/logs/ingest/YOUR_SOURCE_ID
     Format      json_lines
@@ -148,7 +148,7 @@ template(name="LogSightJSON" type="list") {
 
 action(
     type="omhttp"
-    server="logsight-api.home.arpa"
+    server="logsight-api.example.internal"
     serverport="443"
     restpath="api/v1/logs/ingest/YOUR_SOURCE_ID"
     template="LogSightJSON"
@@ -177,7 +177,7 @@ Send logs directly from your application code:
 import httpx, datetime
 
 client = httpx.Client(
-    base_url="https://logsight-api.home.arpa",
+    base_url="https://logsight-api.example.internal",
     headers={"Authorization": f"Bearer {TOKEN}"}
 )
 
@@ -194,7 +194,7 @@ client.post(f"/api/v1/logs/ingest/{SOURCE_ID}", json=[
 
 ### Bash (one-liner)
 ```bash
-curl -X POST "https://logsight-api.home.arpa/api/v1/logs/ingest/$SOURCE_ID" \
+curl -X POST "https://logsight-api.example.internal/api/v1/logs/ingest/$SOURCE_ID" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '[{"level":"ERROR","message":"disk usage at 95%","host":"web-01","service":"nginx"}]'
@@ -204,7 +204,7 @@ curl -X POST "https://logsight-api.home.arpa/api/v1/logs/ingest/$SOURCE_ID" \
 ```bash
 # Pipe docker logs through jq to LogSight
 docker logs -f mycontainer 2>&1 | while read line; do
-  curl -s -X POST "https://logsight-api.home.arpa/api/v1/logs/ingest/$SOURCE_ID" \
+  curl -s -X POST "https://logsight-api.example.internal/api/v1/logs/ingest/$SOURCE_ID" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "[{\"message\":\"$line\",\"host\":\"$(hostname)\",\"service\":\"mycontainer\"}]"
@@ -243,8 +243,8 @@ Customer Infrastructure                    DK InfraEdge (LogSight)
 ## What You Get
 
 Once logs are flowing:
-- **Live dashboard** at logsight.home.arpa — real-time log viewer with search/filter
+- **Live dashboard** at logsight.example.internal — real-time log viewer with search/filter
 - **Alert rules** — threshold, pattern, absence, and rate-change detection (<100ms)
 - **AI analysis** — on-demand OpenAI-powered anomaly detection with root cause + recommendations
 - **Network diagnostics** — ping, DNS, traceroute, port check from LogSight's infrastructure
-- **Grafana dashboards** — ingestion rates, alert history, system health at grafana.home.arpa
+- **Grafana dashboards** — ingestion rates, alert history, system health at grafana.example.internal
